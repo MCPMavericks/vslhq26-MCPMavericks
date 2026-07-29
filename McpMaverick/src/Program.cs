@@ -1,8 +1,19 @@
+using Azure;
+using Azure.AI.OpenAI;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
+builder.Services.AddSingleton(sp =>
+{
+    var client = new AzureOpenAIClient(
+        new Uri("LLM URL from Open ai foundry"),
+        new AzureKeyCredential("Key"));
+
+    return client.GetChatClient("gpt-4o-mini");
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
