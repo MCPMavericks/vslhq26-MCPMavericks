@@ -12,6 +12,9 @@ BEGIN
 END;
 GO
 
+USE JobGuardianAI;
+GO
+
 CREATE OR ALTER VIEW dbo.JobStatus
 AS
 WITH LatestExecution

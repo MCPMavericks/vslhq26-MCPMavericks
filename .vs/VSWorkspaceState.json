@@ -1,6 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\McpMaverick",
+    "\\McpMaverick\\DatabaseScripts",
+    "\\McpMaverick\\src"
   ],
+  "SelectedNode": "\\McpMaverick\\src\\JobGuardianAI.slnx",
   "PreviewInSolutionExplorer": false
 }
