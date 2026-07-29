@@ -7,7 +7,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddScoped<SqlJobService>();
+builder.Services.AddHttpClient<SqlJobService>(client =>
+{
+    var baseUrl = builder.Configuration["DabBaseUrl"]
+        ?? throw new InvalidOperationException("'DabBaseUrl' is not configured.");
+    client.BaseAddress = new Uri(baseUrl);
+});
 
 builder.Services.AddSingleton(sp =>
 {
