@@ -1,0 +1,78 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v2.0.9/dab.draft.schema.json",
+  "data-source": {
+    "database-type": "mssql",
+    "connection-string": "Server=localhost;Database=JobGuardianAI;User ID=JobGuardianAI;Password=Vslive@2026;TrustServerCertificate=True;Encrypt=False",
+    "options": {
+      "set-session-context": false
+    }
+  },
+  "runtime": {
+    "rest": {
+      "enabled": true,
+      "path": "/api"
+    },
+    "graphql": {
+      "enabled": true,
+      "path": "/graphql"
+    },
+    "host": {
+      "authentication": {
+        "provider": "Unauthenticated"
+      }
+    }
+  },
+  "entities": {
+    "KnowledgeBase": {
+      "source": {
+        "object": "dbo.KnowledgeBase",
+        "type": "table"
+      },
+      "permissions": [
+        {
+          "role": "anonymous",
+          "actions": [
+            {
+              "action": "read"
+            }
+          ]
+        }
+      ]
+    },
+    "ActionHistory": {
+      "source": {
+        "object": "dbo.ActionHistory",
+        "type": "table"
+      },
+      "permissions": [
+        {
+          "role": "anonymous",
+          "actions": [
+            {
+              "action": "read"
+            },
+            {
+              "action": "create"
+            }
+          ]
+        }
+      ]
+    },
+    "JobStatus": {
+      "source": {
+        "object": "dbo.JobStatus",
+        "type": "table"
+      },
+      "permissions": [
+        {
+          "role": "anonymous",
+          "actions": [
+            {
+              "action": "read"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
