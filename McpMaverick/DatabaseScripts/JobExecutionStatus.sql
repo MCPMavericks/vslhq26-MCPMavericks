@@ -3,25 +3,18 @@ GO
 
 IF DB_ID(N'JobGuardianAI') IS NULL
 BEGIN
-    PRINT 'Creating database JobGuardianAI...';
-
+    PRINT N'Creating database JobGuardianAI...';
     CREATE DATABASE JobGuardianAI;
-
-    PRINT 'JobGuardianAI database created successfully.';
 END
 ELSE
 BEGIN
-    PRINT 'JobGuardianAI database already exists.';
-END
+    PRINT N'Database JobGuardianAI already exists.';
+END;
 GO
 
-
-Use JobGuardianAI
-GO
-
-CREATE OR ALTER VIEW dbo.JobExecutionStatus
+CREATE OR ALTER VIEW dbo.JobStatus
 AS
-WITH LatestJobHistory
+WITH LatestExecution
 AS
 (
     SELECT
@@ -31,7 +24,7 @@ AS
         h.run_time,
         h.run_duration,
         h.message,
-        h.instance_id,
+        h.step_id,
         ROW_NUMBER() OVER
         (
             PARTITION BY h.job_id
@@ -41,45 +34,200 @@ AS
     WHERE h.step_id = 0
 )
 SELECT
-    j.job_id AS JobId,
-    j.name AS JobName,
-    c.name AS Category,
-    CAST(j.enabled AS bit) AS IsEnabled,
 
-    CASE lh.run_status
+    j.job_id                     AS JobId,
+
+    j.name                       AS JobName,
+
+    CASE le.run_status
         WHEN 0 THEN 'Failed'
         WHEN 1 THEN 'Succeeded'
         WHEN 2 THEN 'Retry'
         WHEN 3 THEN 'Cancelled'
-        WHEN 4 THEN 'In Progress'
+        WHEN 4 THEN 'Running'
         ELSE 'Unknown'
-    END AS CurrentStatus,
+    END                          AS CurrentStatus,
 
-    msdb.dbo.agent_datetime(lh.run_date, lh.run_time) AS LastExecutionTime,
+    msdb.dbo.agent_datetime
+    (
+        le.run_date,
+        le.run_time
+    )                            AS LastExecutionTime,
 
     (
-        (lh.run_duration / 10000) * 3600 +
-        ((lh.run_duration % 10000) / 100) * 60 +
-        (lh.run_duration % 100)
-    ) AS LastDurationSeconds,
+        (le.run_duration / 10000) * 3600 +
+        ((le.run_duration % 10000) / 100) * 60 +
+        (le.run_duration % 100)
+    )                            AS DurationSeconds,
 
-    lh.message AS FailureMessage,
+    le.message                   AS ErrorMessage,
 
     CASE
-        WHEN lh.run_status = 1 THEN CAST(1 AS bit)
-        ELSE CAST(0 AS bit)
-    END AS IsHealthy,
+        WHEN le.run_status = 0 THEN 1
+        ELSE 0
+    END                          AS IsFailed,
 
-    j.description AS JobDescription,
+    CASE
+        WHEN j.enabled = 1 THEN 1
+        ELSE 0
+    END                          AS IsEnabled,
 
-    SUSER_SNAME(j.owner_sid) AS JobOwner,
-
-    @@SERVERNAME AS ServerName
+    @@SERVERNAME                 AS ServerName
 
 FROM msdb.dbo.sysjobs j
-LEFT JOIN LatestJobHistory lh
-    ON j.job_id = lh.job_id
-   AND lh.rn = 1
-LEFT JOIN msdb.dbo.syscategories c
-    ON j.category_id = c.category_id;
+
+LEFT JOIN LatestExecution le
+       ON j.job_id = le.job_id
+      AND le.rn = 1;
+GO
+
+CREATE TABLE dbo.KnowledgeBase
+(
+    KnowledgeBaseId     INT IDENTITY(1,1) PRIMARY KEY,
+    FailureType         NVARCHAR(100) NOT NULL,
+    ErrorPattern        NVARCHAR(500) NOT NULL,
+    RootCause           NVARCHAR(1000) NOT NULL,
+    RecommendedAction   NVARCHAR(1000) NOT NULL,
+    McpTool             NVARCHAR(100) NOT NULL,
+    AutomationLevel     NVARCHAR(20) NOT NULL,
+    Confidence          DECIMAL(5,2) NOT NULL,
+    IsActive            BIT NOT NULL
+        CONSTRAINT DF_KnowledgeBase_IsActive
+        DEFAULT (1),
+
+    CreatedDate         DATETIME2 NOT NULL
+        CONSTRAINT DF_KnowledgeBase_CreatedDate
+        DEFAULT (SYSUTCDATETIME())
+);
+GO
+
+INSERT INTO dbo.KnowledgeBase
+(
+    FailureType,
+    ErrorPattern,
+    RootCause,
+    RecommendedAction,
+    McpTool,
+    AutomationLevel,
+    Confidence
+)
+VALUES
+
+(
+'Missing File',
+'cannot find the file',
+'The expected input file was not found.',
+'Notify file owner and retry the SQL Agent job.',
+'RetryJob',
+'Automatic',
+98
+),
+
+(
+'Deadlock',
+'deadlock victim',
+'SQL Server selected this process as the deadlock victim.',
+'Retry the SQL Agent job.',
+'RetryJob',
+'Automatic',
+96
+),
+
+(
+'Login Failure',
+'login failed',
+'Database authentication failed.',
+'Notify DBA team.',
+'SendEmail',
+'Manual',
+99
+),
+
+(
+'Timeout',
+'timeout',
+'Execution exceeded the configured timeout.',
+'Retry after five minutes.',
+'RetryJob',
+'Approval',
+92
+),
+
+(
+'Permission',
+'permission denied',
+'Application account lacks required permissions.',
+'Notify application owner.',
+'SendEmail',
+'Manual',
+95
+),
+
+(
+'Disk Full',
+'disk full',
+'Destination drive is full.',
+'Notify Infrastructure team.',
+'SendEmail',
+'Manual',
+97
+),
+
+(
+'Database Offline',
+'database is not accessible',
+'Target database is offline.',
+'Notify DBA immediately.',
+'SendEmail',
+'Manual',
+99
+),
+
+(
+'Network',
+'network path not found',
+'Network share is unavailable.',
+'Verify network connectivity and retry.',
+'RetryJob',
+'Approval',
+93
+);
+GO
+
+CREATE TABLE dbo.ActionHistory
+(
+    ActionHistoryId     INT IDENTITY(1,1) PRIMARY KEY,
+    JobName             NVARCHAR(200) NOT NULL,
+    ErrorMessage        NVARCHAR(MAX) NULL,
+    RootCause           NVARCHAR(1000) NULL,
+    ActionName          NVARCHAR(100) NOT NULL,
+    ActionResult        NVARCHAR(50) NOT NULL,
+    McpTool             NVARCHAR(100) NULL,
+    ExecutedBy          NVARCHAR(100) NULL,
+    ExecutedDate        DATETIME2 NOT NULL
+        CONSTRAINT DF_ActionHistory_ExecutedDate
+        DEFAULT (SYSUTCDATETIME())
+);
+GO
+
+INSERT INTO dbo.ActionHistory
+(
+    JobName,
+    ErrorMessage,
+    RootCause,
+    ActionName,
+    ActionResult,
+    McpTool,
+    ExecutedBy
+)
+VALUES
+(
+'Daily Loan Import',
+'Cannot find the file.',
+'Input file missing.',
+'Retry Job',
+'Success',
+'RetryJob',
+'JobGuardian AI'
+);
 GO
