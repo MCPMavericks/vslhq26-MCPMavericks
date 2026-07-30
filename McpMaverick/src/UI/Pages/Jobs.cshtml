@@ -51,10 +51,28 @@
         background: linear-gradient(135deg, #6c757d, #9eaab7);
     }
 
-    .health-bar-label {
-        font-size: .8rem;
-        color: #555;
-        margin-bottom: .25rem;
+    .fill-row {
+        flex: 1 1 0;
+        min-height: 0;
+    }
+
+    .fill-row .card.section-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+    }
+
+    .fill-row .card-body {
+        flex: 1 1 0;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .page-fill {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 120px);
     }
 
     .section-card {
@@ -107,6 +125,7 @@
         }
 </style>
 
+<div class="page-fill">
 @if (Model.ErrorMessage is not null)
 {
     <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -162,49 +181,78 @@ else
         </div>
     </div>
 
-    @* ── Middle row: health overview + recent failures ── *@
-    <div class="row g-3 mb-4">
+    @* ── All Jobs (60%) + Recent Failures (40%) ── *@
+    <div class="row g-3 fill-row">
 
-        @* Job Health Overview *@
+        @* All Jobs — 60% *@
         <div class="col-md-7">
             <div class="card section-card h-100">
-                <div class="card-header py-3" style="padding:5px !important;">Job Health Overview by Category</div>
-                <div class="card-body">
-                    @if (!Model.Jobs.Any())
-                    {
-                        <p class="text-muted">No jobs found.</p>
-                    }
-                    else
-                    {
-                        @foreach (var cat in Model.Jobs
-                            .GroupBy(j => string.IsNullOrEmpty(j.Category) ? "Uncategorized" : j.Category)
-                            .OrderBy(g => g.Key))
-                        {
-                            var total = cat.Count();
-                            var healthy = cat.Count(j => j.IsHealthy);
-                            var pct = total == 0 ? 100.0 : Math.Round((double)healthy / total * 100, 1);
-                            var barColor = pct >= 90 ? "bg-success" : pct >= 60 ? "bg-warning" : "bg-danger";
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between health-bar-label">
-                                    <span class="text-truncate me-2" style="max-width:60%">@cat.Key</span>
-                                    <span class="fw-semibold">@healthy / @total healthy &nbsp;(@pct%)</span>
-                                </div>
-                                <div class="progress" style="height:10px; border-radius:6px;">
-                                    <div class="progress-bar @barColor" role="progressbar"
-                                         style="width:@pct%"
-                                         aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
-                        }
-                    }
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <span>All Jobs</span>
+                    <div class="input-group input-group-sm" style="max-width:260px;">
+                        <span class="input-group-text bg-body border-end-0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11" /></svg></span>
+                        <input id="jobFilter" type="text" class="form-control border-start-0" placeholder="Filter jobs…" oninput="filterJobs(this.value)">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="jobTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3 sortable" onclick="sortTable(0)">Job Name &#8645;</th>
+                                    <th class="sortable" onclick="sortTable(1)">Enabled &#8645;</th>
+                                    <th class="sortable" onclick="sortTable(2)">Status &#8645;</th>
+                                    <th class="sortable" onclick="sortTable(3)">Last Execution &#8645;</th>
+                                    <th class="sortable" onclick="sortTable(4)">Owner &#8645;</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var job in Model.Jobs)
+                                {
+                                    var statusClass = job.CurrentStatus switch
+                                    {
+                                        "Succeeded" => "bg-success",
+                                        "Failed" => "bg-danger",
+                                        "In Progress" => "bg-primary",
+                                        "Retry" => "bg-warning text-dark",
+                                        "Cancelled" => "bg-warning text-dark",
+                                        _ => "bg-secondary"
+                                    };
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@job.JobName</td>
+                                        <td>
+                                            @if (job.IsEnabled)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">Enabled</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Disabled</span>
+                                            }
+                                        </td>
+                                        <td><span class="badge @statusClass">@job.CurrentStatus</span></td>
+                                        <td class="text-muted small">
+                                            @(job.LastExecutionTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
+                                        </td>
+                                        <td class="text-muted small">@(job.JobOwner ?? "—")</td>
+                                        <td class="text-end pe-3">
+                                            <a asp-page="/JobDetails" asp-route-jobName="@job.JobName" asp-route-jobId="@job.JobId"
+                                               class="btn btn-outline-primary btn-sm">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        @* Recent Failures *@
+        @* Recent Failures — 40% *@
         <div class="col-md-5">
             <div class="card section-card h-100">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center" style="padding:5px !important;">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <span>Recent Failures</span>
                     @if (Model.RecentFailures.Any())
                     {
@@ -242,89 +290,10 @@ else
                 </div>
             </div>
         </div>
-    </div>
 
-    @* ── Full job list ── *@
-    <div class="card section-card">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <span>All Jobs</span>
-            <div class="input-group input-group-sm" style="max-width:260px;">
-                <span class="input-group-text bg-body border-end-0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11" /></svg></span>
-                <input id="jobFilter" type="text" class="form-control border-start-0" placeholder="Filter jobs…" oninput="filterJobs(this.value)">
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="jobTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-3 sortable" onclick="sortTable(0)">Job Name &#8645;</th>
-                            <th class="sortable" onclick="sortTable(1)">Category &#8645;</th>
-                            <th class="sortable" onclick="sortTable(2)">Enabled &#8645;</th>
-                            <th class="sortable" onclick="sortTable(3)">Status &#8645;</th>
-                            <th class="sortable" onclick="sortTable(4)">Last Execution &#8645;</th>
-                            <th class="text-center">Health</th>
-                            <th class="text-center sortable" onclick="sortTable(6)">Duration &#8645;</th>
-                            <th class="sortable" onclick="sortTable(7)">Owner &#8645;</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var job in Model.Jobs)
-                        {
-                            var statusClass = job.CurrentStatus switch
-                            {
-                                "Succeeded" => "bg-success",
-                                "Failed" => "bg-danger",
-                                "In Progress" => "bg-primary",
-                                "Retry" => "bg-warning text-dark",
-                                "Cancelled" => "bg-warning text-dark",
-                                _ => "bg-secondary"
-                            };
-                            <tr>
-                                <td class="ps-3 fw-semibold">@job.JobName</td>
-                                <td class="text-muted small">@(string.IsNullOrEmpty(job.Category) ? "—" : job.Category)</td>
-                                <td>
-                                    @if (job.IsEnabled)
-                                    {
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Enabled</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Disabled</span>
-                                    }
-                                </td>
-                                <td><span class="badge @statusClass">@job.CurrentStatus</span></td>
-                                <td class="text-muted small">
-                                    @(job.LastExecutionTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
-                                </td>
-                                <td class="text-center">
-                                    @if (job.IsHealthy)
-                                    {
-                                        <span class="text-success fw-bold">&#10003;</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-danger fw-bold">&#10007;</span>
-                                    }
-                                </td>
-                                <td class="text-center text-muted small">@job.FormattedDuration</td>
-                                <td class="text-muted small">@(job.JobOwner ?? "—")</td>
-                                <td class="text-end pe-3">
-                                    <a asp-page="/JobDetails" asp-route-jobName="@job.JobName" asp-route-jobId="@job.JobId"
-                                       class="btn btn-outline-primary btn-sm">Details</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer text-muted small">
-            @Model.Jobs.Count job(s) loaded &bull; Page refreshed at @DateTime.Now.ToString("HH:mm:ss")
-        </div>
     </div>
 }
+</div>
 
 @section Scripts {
     <script>

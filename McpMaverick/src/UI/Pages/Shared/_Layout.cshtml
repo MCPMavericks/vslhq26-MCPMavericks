@@ -20,7 +20,7 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3" style="margin:0px !important; padding-bottom: 0px !important;">
-            <div class="container">
+            <div class="container-fluid px-2">
                 <img src="~/images/badge.png" alt="Badge" width="32" height="32" />&nbsp;&nbsp;
                 <a class="navbar-brand" asp-area="" asp-page="/Index">Job Guardian AI</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -37,11 +37,18 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container-fluid px-2">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
+
+    <footer class="border-top bg-body-tertiary text-muted small py-2 mt-auto">
+        <div class="container-fluid px-2 d-flex justify-content-between align-items-center">
+            <span>&copy; @DateTime.Now.Year Job Guardian AI</span>
+            <span class="fw-semibold">MCP Mavericks</span>
+        </div>
+    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
