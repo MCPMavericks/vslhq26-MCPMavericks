@@ -22,6 +22,11 @@ builder.Services.AddHttpClient<SqlJobService>(client =>
 
 //    return client.GetChatClient("gpt-4o-mini");
 //});
+
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AddPageRoute("/Jobs", "");
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

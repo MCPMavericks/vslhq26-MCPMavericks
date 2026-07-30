@@ -19,26 +19,15 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3" style="margin:0px !important; padding-bottom: 0px !important;">
             <div class="container">
-                <i ></i>
+                <img src="~/images/badge.png" alt="Badge" width="32" height="32" />&nbsp;&nbsp;
                 <a class="navbar-brand" asp-area="" asp-page="/Index">Job Guardian AI</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/Jobs">SQL Jobs</a>
-                        </li>
-                    </ul>
                     <div class="d-flex align-items-center ms-2">
                         <button id="themeToggle" class="btn btn-sm btn-outline-secondary" title="Toggle dark mode" onclick="toggleTheme()">
                             <span id="themeIcon">&#127769;</span>
@@ -53,12 +42,6 @@
             @RenderBody()
         </main>
     </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - McpMaverick - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

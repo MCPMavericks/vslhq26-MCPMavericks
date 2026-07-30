@@ -5,33 +5,107 @@
 }
 
 <style>
-    .stat-card { border-radius: .75rem; padding: 1.25rem 1.5rem; color: #fff; display: flex; align-items: center; gap: 1rem; }
-    .stat-card .stat-icon { font-size: 2rem; opacity: .85; }
-    .stat-card .stat-value { font-size: 2rem; font-weight: 700; line-height: 1; }
-    .stat-card .stat-label { font-size: .8rem; opacity: .85; margin-top: .15rem; }
-    .stat-total   { background: linear-gradient(135deg, #6f42c1, #9a6fe8); }
-    .stat-healthy { background: linear-gradient(135deg, #198754, #2dc888); }
-    .stat-failed  { background: linear-gradient(135deg, #dc3545, #f26b78); }
-    .stat-running { background: linear-gradient(135deg, #fd7e14, #fdad6b); }
-    .stat-disabled{ background: linear-gradient(135deg, #6c757d, #9eaab7); }
-    .health-bar-label { font-size: .8rem; color: #555; margin-bottom: .25rem; }
-    .section-card { border: none; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 1.5rem; }
-    .section-card .card-header { background: transparent; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 1rem; }
-    .failure-item { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid #f5f5f5; }
-    .failure-item:last-child { border-bottom: none; }
-    .failure-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #6c757d; }
-    .sortable { cursor: pointer; user-select: none; }
-    .sortable:hover { color: #0d6efd; }
-</style>
+    .stat-card {
+        border-radius: .75rem;
+        padding: 1.25rem 1.5rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-0 fw-bold">Operations Dashboard</h2>
-        <small class="text-muted">SQL Server Agent — job health overview &amp; recent activity</small>
-    </div>
-    <div class="text-muted small">Refreshed&nbsp;@DateTime.Now.ToString("HH:mm:ss")</div>
-</div>
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            opacity: .85;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-card .stat-label {
+            font-size: .8rem;
+            opacity: .85;
+            margin-top: .15rem;
+        }
+
+    .stat-total {
+        background: linear-gradient(135deg, #6f42c1, #9a6fe8);
+    }
+
+    .stat-healthy {
+        background: linear-gradient(135deg, #198754, #2dc888);
+    }
+
+    .stat-failed {
+        background: linear-gradient(135deg, #dc3545, #f26b78);
+    }
+
+    .stat-running {
+        background: linear-gradient(135deg, #fd7e14, #fdad6b);
+    }
+
+    .stat-disabled {
+        background: linear-gradient(135deg, #6c757d, #9eaab7);
+    }
+
+    .health-bar-label {
+        font-size: .8rem;
+        color: #555;
+        margin-bottom: .25rem;
+    }
+
+    .section-card {
+        border: none;
+        border-radius: .75rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        margin-bottom: 1.5rem;
+    }
+
+        .section-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid #f0f0f0;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+    .failure-item {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .6rem 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .failure-item:last-child {
+            border-bottom: none;
+        }
+
+    .failure-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .table th {
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #6c757d;
+    }
+
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+        .sortable:hover {
+            color: #0d6efd;
+        }
+</style>
 
 @if (Model.ErrorMessage is not null)
 {
@@ -40,7 +114,7 @@
 else
 {
     @* ── Stat cards ── *@
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" style="margin:0px;">
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card stat-total h-100">
                 <div class="stat-icon">&#128202;</div>
@@ -94,7 +168,7 @@ else
         @* Job Health Overview *@
         <div class="col-md-7">
             <div class="card section-card h-100">
-                <div class="card-header py-3">Job Health Overview by Category</div>
+                <div class="card-header py-3" style="padding:5px !important;">Job Health Overview by Category</div>
                 <div class="card-body">
                     @if (!Model.Jobs.Any())
                     {
@@ -106,9 +180,9 @@ else
                             .GroupBy(j => string.IsNullOrEmpty(j.Category) ? "Uncategorized" : j.Category)
                             .OrderBy(g => g.Key))
                         {
-                            var total   = cat.Count();
+                            var total = cat.Count();
                             var healthy = cat.Count(j => j.IsHealthy);
-                            var pct     = total == 0 ? 100.0 : Math.Round((double)healthy / total * 100, 1);
+                            var pct = total == 0 ? 100.0 : Math.Round((double)healthy / total * 100, 1);
                             var barColor = pct >= 90 ? "bg-success" : pct >= 60 ? "bg-warning" : "bg-danger";
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between health-bar-label">
@@ -130,7 +204,7 @@ else
         @* Recent Failures *@
         <div class="col-md-5">
             <div class="card section-card h-100">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center" style="padding:5px !important;">
                     <span>Recent Failures</span>
                     @if (Model.RecentFailures.Any())
                     {
@@ -175,7 +249,7 @@ else
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <span>All Jobs</span>
             <div class="input-group input-group-sm" style="max-width:260px;">
-                <span class="input-group-text bg-body border-end-0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11"/></svg></span>
+                <span class="input-group-text bg-body border-end-0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11" /></svg></span>
                 <input id="jobFilter" type="text" class="form-control border-start-0" placeholder="Filter jobs…" oninput="filterJobs(this.value)">
             </div>
         </div>
@@ -200,12 +274,12 @@ else
                         {
                             var statusClass = job.CurrentStatus switch
                             {
-                                "Succeeded"   => "bg-success",
-                                "Failed"      => "bg-danger",
+                                "Succeeded" => "bg-success",
+                                "Failed" => "bg-danger",
                                 "In Progress" => "bg-primary",
-                                "Retry"       => "bg-warning text-dark",
-                                "Cancelled"   => "bg-warning text-dark",
-                                _             => "bg-secondary"
+                                "Retry" => "bg-warning text-dark",
+                                "Cancelled" => "bg-warning text-dark",
+                                _ => "bg-secondary"
                             };
                             <tr>
                                 <td class="ps-3 fw-semibold">@job.JobName</td>
@@ -238,7 +312,7 @@ else
                                 <td class="text-muted small">@(job.JobOwner ?? "—")</td>
                                 <td class="text-end pe-3">
                                     <a asp-page="/JobDetails" asp-route-jobName="@job.JobName" asp-route-jobId="@job.JobId"
-                                      class="btn btn-outline-primary btn-sm">Details</a>
+                                       class="btn btn-outline-primary btn-sm">Details</a>
                                 </td>
                             </tr>
                         }
@@ -253,28 +327,28 @@ else
 }
 
 @section Scripts {
-<script>
-    function filterJobs(val) {
-        const filter = val.toLowerCase();
-        document.querySelectorAll('#jobTable tbody tr').forEach(row => {
-            row.style.display = row.cells[0].textContent.toLowerCase().includes(filter) ? '' : 'none';
-        });
-    }
+    <script>
+        function filterJobs(val) {
+            const filter = val.toLowerCase();
+            document.querySelectorAll('#jobTable tbody tr').forEach(row => {
+                row.style.display = row.cells[0].textContent.toLowerCase().includes(filter) ? '' : 'none';
+            });
+        }
 
-    let sortDir = {};
-    function sortTable(col) {
-        const tbody = document.querySelector('#jobTable tbody');
-        const rows  = Array.from(tbody.querySelectorAll('tr'));
-        sortDir[col] = !sortDir[col];
-        rows.sort((a, b) => {
-            const av = a.cells[col]?.textContent.trim() ?? '';
-            const bv = b.cells[col]?.textContent.trim() ?? '';
-            const n  = parseFloat(av) - parseFloat(bv);
-            const cmp = isNaN(n) ? av.localeCompare(bv) : n;
-            return sortDir[col] ? cmp : -cmp;
-        });
-        rows.forEach(r => tbody.appendChild(r));
-    }
-</script>
+        let sortDir = {};
+        function sortTable(col) {
+            const tbody = document.querySelector('#jobTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            sortDir[col] = !sortDir[col];
+            rows.sort((a, b) => {
+                const av = a.cells[col]?.textContent.trim() ?? '';
+                const bv = b.cells[col]?.textContent.trim() ?? '';
+                const n = parseFloat(av) - parseFloat(bv);
+                const cmp = isNaN(n) ? av.localeCompare(bv) : n;
+                return sortDir[col] ? cmp : -cmp;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        }
+    </script>
 }
 
