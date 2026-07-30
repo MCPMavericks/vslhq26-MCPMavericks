@@ -1,4 +1,5 @@
 using McpMaverick.Models;
+using McpMaverick.Services.Dtos;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -14,18 +15,7 @@ public class SqlJobService(HttpClient httpClient)
             "/api/JobStatus", JsonOptions);
 
         return response?.Value
-            .Select(r => new SqlAgentJob
-            {
-                JobId               = Guid.Parse(r.JobId),
-                JobName             = r.JobName,
-                IsEnabled           = r.IsEnabled == 1,
-                CurrentStatus       = r.CurrentStatus ?? "Unknown",
-                LastExecutionTime   = r.LastExecutionTime,
-                LastDurationSeconds = r.DurationSeconds,
-                FailureMessage      = r.ErrorMessage,
-                IsHealthy           = r.IsFailed == 0,
-                ServerName          = r.ServerName
-            })
+            .Select(MapJobStatus)
             .ToList() ?? [];
     }
 
@@ -35,68 +25,47 @@ public class SqlJobService(HttpClient httpClient)
             $"/api/JobStatus/JobId/{jobId}", JsonOptions);
 
         var r = response?.Value.FirstOrDefault();
-        if (r is null) return null;
-
-        return new SqlAgentJob
-        {
-            JobId               = Guid.Parse(r.JobId),
-            JobName             = r.JobName,
-            IsEnabled           = r.IsEnabled == 1,
-            CurrentStatus       = r.CurrentStatus ?? "Unknown",
-            LastExecutionTime   = r.LastExecutionTime,
-            LastDurationSeconds = r.DurationSeconds,
-            FailureMessage      = r.ErrorMessage,
-            IsHealthy           = r.IsFailed == 0,
-            ServerName          = r.ServerName
-        };
+        return r is null ? null : MapJobStatus(r);
     }
 
     public async Task<List<ActionHistoryEntry>> GetActionHistoryAsync(string jobName, int maxRows = 50)
     {
-        var encoded = Uri.EscapeDataString(jobName);
         var response = await httpClient.GetFromJsonAsync<DabResponse<DabActionHistory>>(
             $"/api/ActionHistory?$filter=JobName eq '{jobName}'&$first={maxRows}&$orderby=ExecutedDate desc",
             JsonOptions);
 
         return response?.Value
-            .Select(r => new ActionHistoryEntry
-            {
-                ActionHistoryId = r.ActionHistoryId,
-                JobName         = r.JobName,
-                ErrorMessage    = r.ErrorMessage,
-                RootCause       = r.RootCause,
-                ActionName      = r.ActionName,
-                ActionResult    = r.ActionResult,
-                McpTool         = r.McpTool,
-                ExecutedBy      = r.ExecutedBy,
-                ExecutedDate    = r.ExecutedDate
-            })
+            .Select(MapActionHistory)
             .ToList() ?? [];
     }
 
-    // DAB wraps all REST results in { "value": [...] }
-    private sealed record DabResponse<T>(List<T> Value);
+    // ── Mapping helpers ──────────────────────────────────────────────────────
 
-    private sealed record DabJobStatus(
-        string JobId,
-        string JobName,
-        string? CurrentStatus,
-        DateTime? LastExecutionTime,
-        int? DurationSeconds,
-        string? ErrorMessage,
-        int IsFailed,
-        int IsEnabled,
-        string? ServerName);
+    private static SqlAgentJob MapJobStatus(DabJobStatus r) => new()
+    {
+        JobId               = Guid.Parse(r.JobId),
+        JobName             = r.JobName,
+        IsEnabled           = r.IsEnabled == 1,
+        CurrentStatus       = r.CurrentStatus ?? "Unknown",
+        LastExecutionTime   = r.LastExecutionTime,
+        LastDurationSeconds = r.DurationSeconds,
+        FailureMessage      = r.ErrorMessage,
+        IsHealthy           = r.IsFailed == 0,
+        ServerName          = r.ServerName
+    };
 
-    private sealed record DabActionHistory(
-        int ActionHistoryId,
-        string JobName,
-        string? ErrorMessage,
-        string? RootCause,
-        string ActionName,
-        string ActionResult,
-        string? McpTool,
-        string? ExecutedBy,
-        DateTime ExecutedDate);
+    private static ActionHistoryEntry MapActionHistory(DabActionHistory r) => new()
+    {
+        ActionHistoryId = r.ActionHistoryId,
+        JobName         = r.JobName,
+        ErrorMessage    = r.ErrorMessage,
+        RootCause       = r.RootCause,
+        ActionName      = r.ActionName,
+        ActionResult    = r.ActionResult,
+        McpTool         = r.McpTool,
+        ExecutedBy      = r.ExecutedBy,
+        ExecutedDate    = r.ExecutedDate
+    };
 }
+
 
