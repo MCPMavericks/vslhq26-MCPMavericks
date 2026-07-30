@@ -16,6 +16,11 @@
       "enabled": true,
       "path": "/graphql"
     },
+    "mcp": {
+      "enabled": true,
+      "path": "/mcp",
+      "description": "JobGuardianAI MCP server exposing JobStatus, KnowledgeBase, and ActionHistory entities for the SQL job monitoring agent."
+    },
     "host": {
       "authentication": {
         "provider": "Unauthenticated"
@@ -28,6 +33,18 @@
         "object": "dbo.KnowledgeBase",
         "type": "table"
       },
+      "fields": [
+        { "name": "KnowledgeBaseId", "primary-key": true, "description": "Unique identifier for the knowledge base entry." },
+        { "name": "FailureType", "description": "Short category name for the type of job failure, e.g. Deadlock, Timeout, Missing File." },
+        { "name": "ErrorPattern", "description": "Substring matched (case-insensitive) against a failed job's error message to identify this entry." },
+        { "name": "RootCause", "description": "Human-readable explanation of why this failure typically occurs." },
+        { "name": "RecommendedAction", "description": "The remediation step recommended when this failure pattern matches." },
+        { "name": "McpTool", "description": "Name of the MCP/automation tool that can carry out the recommended action, e.g. RetryJob, SendEmail." },
+        { "name": "AutomationLevel", "description": "How much autonomy the agent has for this entry: Automatic, Approval, or Manual." },
+        { "name": "Confidence", "description": "Confidence score (0-100) that this entry correctly diagnoses a matching failure." },
+        { "name": "IsActive", "description": "Whether this knowledge base entry is currently active and eligible for matching." },
+        { "name": "CreatedDate", "description": "UTC timestamp when this knowledge base entry was created." }
+      ],
       "permissions": [
         {
           "role": "anonymous",
@@ -44,6 +61,17 @@
         "object": "dbo.ActionHistory",
         "type": "table"
       },
+      "fields": [
+        { "name": "ActionHistoryId", "primary-key": true, "description": "Unique identifier for the recorded action." },
+        { "name": "JobName", "description": "Name of the SQL Agent job the action was taken for." },
+        { "name": "ErrorMessage", "description": "The error message reported by the failed job execution." },
+        { "name": "RootCause", "description": "Root cause identified for the failure, usually copied from the matched KnowledgeBase entry." },
+        { "name": "ActionName", "description": "The action that was recommended or executed, e.g. Retry Job, Notify DBA." },
+        { "name": "ActionResult", "description": "Outcome of the action, e.g. Success, Failed, Pending Approval." },
+        { "name": "McpTool", "description": "Name of the MCP/automation tool used to carry out the action." },
+        { "name": "ExecutedBy", "description": "Who or what executed the action, e.g. JobAgent or a user name." },
+        { "name": "ExecutedDate", "description": "UTC timestamp when the action was executed or recorded." }
+      ],
       "permissions": [
         {
           "role": "anonymous",
@@ -61,8 +89,19 @@
     "JobStatus": {
       "source": {
         "object": "dbo.JobStatus",
-        "type": "table"
+        "type": "view"
       },
+      "fields": [
+        { "name": "JobId", "primary-key": true, "description": "Unique identifier of the SQL Agent job (msdb.dbo.sysjobs.job_id)." },
+        { "name": "JobName", "description": "Display name of the SQL Agent job." },
+        { "name": "CurrentStatus", "description": "Outcome of the job's most recent run: Failed, Succeeded, Retry, Cancelled, Running, or Unknown." },
+        { "name": "LastExecutionTime", "description": "Date and time the job last ran." },
+        { "name": "DurationSeconds", "description": "How long the last run took, in seconds." },
+        { "name": "ErrorMessage", "description": "Message reported by the last job step, including failure details when the run failed." },
+        { "name": "IsFailed", "description": "1 if the job's last run failed, otherwise 0." },
+        { "name": "IsEnabled", "description": "1 if the SQL Agent job is currently enabled, otherwise 0." },
+        { "name": "ServerName", "description": "Name of the SQL Server instance the job ran on." }
+      ],
       "permissions": [
         {
           "role": "anonymous",

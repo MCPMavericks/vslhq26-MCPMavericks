@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/Resources/">
     <File Path="../DatabaseScripts/JobExecutionStatus.sql" />
+    <File Path="JobsScript.sql" />
   </Folder>
-  <Project Path="JobGuardianAI.csproj" />
+  <Project Path="JobGuardianAI.Agents/JobGuardianAI.Agents.csproj" />
+  <Project Path="UI/JobGuardianAI.csproj" />
 </Solution>

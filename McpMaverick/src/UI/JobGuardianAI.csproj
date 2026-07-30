@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="JobGuardianAI.Agents\**" />
+    <Content Remove="JobGuardianAI.Agents\**" />
+    <EmbeddedResource Remove="JobGuardianAI.Agents\**" />
+    <None Remove="JobGuardianAI.Agents\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
   </ItemGroup>
