@@ -29,23 +29,25 @@ public class SqlJobService(HttpClient httpClient)
             .ToList() ?? [];
     }
 
-    public async Task<List<JobRunHistory>> GetJobRunHistoryAsync(string jobName, int maxRows = 50)
+    public async Task<List<ActionHistoryEntry>> GetActionHistoryAsync(string jobName, int maxRows = 50)
     {
         var encoded = Uri.EscapeDataString(jobName);
         var response = await httpClient.GetFromJsonAsync<DabResponse<DabActionHistory>>(
-            $"/api/ActionHistory?$filter=JobName eq '{encoded}'&$first={maxRows}&$orderby=ExecutedDate desc",
+            $"/api/ActionHistory?$filter=JobName eq '{jobName}'&$first={maxRows}&$orderby=ExecutedDate desc",
             JsonOptions);
 
         return response?.Value
-            .Select(r => new JobRunHistory
+            .Select(r => new ActionHistoryEntry
             {
+                ActionHistoryId = r.ActionHistoryId,
                 JobName         = r.JobName,
-                StepId          = 0,
-                StepName        = r.ActionName,
-                RunStatus       = r.ActionResult,
-                RunDateTime     = r.ExecutedDate,
-                DurationSeconds = 0,
-                Message         = r.ErrorMessage ?? string.Empty
+                ErrorMessage    = r.ErrorMessage,
+                RootCause       = r.RootCause,
+                ActionName      = r.ActionName,
+                ActionResult    = r.ActionResult,
+                McpTool         = r.McpTool,
+                ExecutedBy      = r.ExecutedBy,
+                ExecutedDate    = r.ExecutedDate
             })
             .ToList() ?? [];
     }

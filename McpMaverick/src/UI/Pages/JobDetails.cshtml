@@ -2,8 +2,6 @@
 @model JobDetailsModel
 @{
     ViewData["Title"] = $"Job Details – {Model.JobName}";
-    var jobRuns = Model.History.Where(h => h.StepId == 0).ToList();
-    var stepRuns = Model.History.Where(h => h.StepId != 0).ToList();
 }
 
 <style>
@@ -21,7 +19,7 @@
     <a asp-page="/Jobs" class="btn btn-outline-secondary btn-sm">&#8592; Back to Dashboard</a>
     <div>
         <h2 class="mb-0 fw-bold">@Model.JobName</h2>
-        <small class="text-muted">Run history &amp; step details</small>
+        <small class="text-muted">Action history from Job Guardian AI</small>
     </div>
 </div>
 
@@ -35,47 +33,43 @@ else
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="detail-stat">
-                <div class="ds-value">@Model.TotalRuns</div>
-                <div class="ds-label">Total Runs</div>
+                <div class="ds-value">@Model.TotalActions</div>
+                <div class="ds-label">Total Actions</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="detail-stat">
                 <div class="ds-value text-success">@Model.SuccessCount</div>
-                <div class="ds-label">Successes</div>
+                <div class="ds-label">Succeeded</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="detail-stat">
                 <div class="ds-value @(Model.FailureCount > 0 ? "text-danger" : "text-muted")">@Model.FailureCount</div>
-                <div class="ds-label">Failures</div>
+                <div class="ds-label">Failed</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="detail-stat">
-                @{
-                    var avg = Model.AvgDurationSeconds;
-                    var avgText = avg.HasValue
-                        ? avg.Value >= 60 ? $"{(int)(avg.Value / 60)}m {(int)(avg.Value % 60)}s"
-                                          : $"{(int)avg.Value}s"
-                        : "—";
-                    var healthPct = Model.TotalRuns == 0 ? 100.0
-                        : Math.Round((double)Model.SuccessCount / Model.TotalRuns * 100, 1);
-                    var hColor = healthPct >= 90 ? "text-success" : healthPct >= 60 ? "text-warning" : "text-danger";
-                }
-                <div class="ds-value @hColor">@healthPct%</div>
-                <div class="ds-label">Success Rate</div>
+                <div class="ds-value @(Model.PendingCount > 0 ? "text-warning" : "text-muted")">@Model.PendingCount</div>
+                <div class="ds-label">Pending Approval</div>
             </div>
         </div>
     </div>
 
-    @* ── Job-level run history ── *@
+    @* ── Action History from DAB ── *@
     <div class="card section-card">
-        <div class="card-header py-3">Job Run History (last @jobRuns.Count runs)</div>
-        <div class="card-body p-0">
-            @if (!jobRuns.Any())
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <span>Action History</span>
+            @if (Model.ActionHistory.Any())
             {
-                <p class="p-3 text-muted">No run history found for this job.</p>
+                <span class="badge bg-secondary rounded-pill">@Model.ActionHistory.Count</span>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.ActionHistory.Any())
+            {
+                <p class="p-3 text-muted">No action history found for this job.</p>
             }
             else
             {
@@ -83,35 +77,44 @@ else
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-3">Run Date / Time</th>
-                                <th>Status</th>
-                                <th class="text-center">Duration</th>
-                                <th>Message</th>
+                                <th class="ps-3">Date / Time</th>
+                                <th>Action</th>
+                                <th>Result</th>
+                                <th>MCP Tool</th>
+                                <th>Executed By</th>
+                                <th>Root Cause / Error</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var run in jobRuns)
+                            @foreach (var entry in Model.ActionHistory)
                             {
-                                var sc = run.RunStatus switch
+                                var resultClass = entry.ActionResult switch
                                 {
-                                    "Succeeded"   => "bg-success",
-                                    "Failed"      => "bg-danger",
-                                    "In Progress" => "bg-primary",
-                                    "Retry"       => "bg-warning text-dark",
-                                    "Cancelled"   => "bg-warning text-dark",
-                                    _             => "bg-secondary"
+                                    "Success"          => "bg-success",
+                                    "Failed"           => "bg-danger",
+                                    "Pending Approval" => "bg-warning text-dark",
+                                    _                  => "bg-secondary"
                                 };
-                                var dur = run.DurationSeconds >= 60
-                                    ? $"{run.DurationSeconds / 60}m {run.DurationSeconds % 60}s"
-                                    : $"{run.DurationSeconds}s";
                                 <tr>
-                                    <td class="ps-3">@run.RunDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                    <td><span class="badge @sc">@run.RunStatus</span></td>
-                                    <td class="text-center text-muted small">@dur</td>
+                                    <td class="ps-3 small">@entry.ExecutedDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td class="fw-semibold small">@entry.ActionName</td>
+                                    <td><span class="badge @resultClass">@entry.ActionResult</span></td>
+                                    <td class="text-muted small">@(entry.McpTool ?? "—")</td>
+                                    <td class="text-muted small">@(entry.ExecutedBy ?? "—")</td>
                                     <td>
-                                        <span class="msg-cell small text-muted"
-                                              title="@run.Message"
-                                              onclick="this.classList.toggle('expanded')">@run.Message</span>
+                                        @{
+                                            var detail = entry.RootCause ?? entry.ErrorMessage;
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(detail))
+                                        {
+                                            <span class="msg-cell small text-muted"
+                                                  title="@detail"
+                                                  onclick="this.classList.toggle('expanded')">@detail</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -121,57 +124,4 @@ else
             }
         </div>
     </div>
-
-    @* ── Step-level run details ── *@
-    @if (stepRuns.Any())
-    {
-        <div class="card section-card">
-            <div class="card-header py-3">Step-Level Run Details</div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3">Run Date / Time</th>
-                                <th class="text-center">Step #</th>
-                                <th>Step Name</th>
-                                <th>Status</th>
-                                <th class="text-center">Duration</th>
-                                <th>Message</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var step in stepRuns)
-                            {
-                                var sc = step.RunStatus switch
-                                {
-                                    "Succeeded"   => "bg-success",
-                                    "Failed"      => "bg-danger",
-                                    "In Progress" => "bg-primary",
-                                    "Retry"       => "bg-warning text-dark",
-                                    "Cancelled"   => "bg-warning text-dark",
-                                    _             => "bg-secondary"
-                                };
-                                var dur = step.DurationSeconds >= 60
-                                    ? $"{step.DurationSeconds / 60}m {step.DurationSeconds % 60}s"
-                                    : $"{step.DurationSeconds}s";
-                                <tr>
-                                    <td class="ps-3 small">@step.RunDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                    <td class="text-center text-muted small">@step.StepId</td>
-                                    <td class="small">@step.StepName</td>
-                                    <td><span class="badge @sc">@step.RunStatus</span></td>
-                                    <td class="text-center text-muted small">@dur</td>
-                                    <td>
-                                        <span class="msg-cell small text-muted"
-                                              title="@step.Message"
-                                              onclick="this.classList.toggle('expanded')">@step.Message</span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    }
 }

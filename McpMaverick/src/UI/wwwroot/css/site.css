@@ -29,3 +29,31 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* ── Dark mode overrides for custom components ── */
+[data-bs-theme="dark"] .health-bar-label {
+    color: var(--bs-secondary-color) !important;
+}
+
+[data-bs-theme="dark"] .section-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+}
+
+[data-bs-theme="dark"] .section-card .card-header {
+    border-bottom-color: var(--bs-border-color) !important;
+}
+
+[data-bs-theme="dark"] .failure-item {
+    border-bottom-color: var(--bs-border-color-translucent) !important;
+}
+
+[data-bs-theme="dark"] .detail-stat {
+    background: var(--bs-tertiary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+[data-bs-theme="dark"] .input-group-text.bg-white {
+    background-color: var(--bs-body-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}

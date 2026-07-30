@@ -34,7 +34,7 @@ AI-powered SQL Server Agent job monitoring and remediation using .NET 10, Azure 
 
 ## Data API Builder (DAB) Configuration
 
-DAB exposes the database resources as a REST/GraphQL API consumed by the app.
+DAB exposes the database resources as a REST/GraphQL/**MCP** API consumed by the app.
 
 ### 1. Initialize DAB
 
