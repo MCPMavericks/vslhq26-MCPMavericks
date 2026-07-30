@@ -160,7 +160,7 @@ else
                                         </div>
                                     }
                                 </div>
-                                <a asp-page="/JobDetails" asp-route-jobName="@job.JobName"
+                                <a asp-page="/JobDetails" asp-route-jobName="@job.JobName" asp-route-jobId="@job.JobId"
                                    class="badge bg-danger text-decoration-none">FAILED</a>
                             </div>
                         }
