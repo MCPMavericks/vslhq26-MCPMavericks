@@ -2,7 +2,7 @@
   "$schema": "https://github.com/Azure/data-api-builder/releases/download/v2.0.9/dab.draft.schema.json",
   "data-source": {
     "database-type": "mssql",
-    "connection-string": "Server=localhost;Database=JobGuardianAI;User ID=JobGuardianAI;Password=Vslive@2026;TrustServerCertificate=True;Encrypt=False",
+    "connection-string": "@env('DAB_SQL_CONNECTION_STRING')",
     "options": {
       "set-session-context": false
     }
@@ -70,7 +70,8 @@
         { "name": "ActionResult", "description": "Outcome of the action, e.g. Success, Failed, Pending Approval." },
         { "name": "McpTool", "description": "Name of the MCP/automation tool used to carry out the action." },
         { "name": "ExecutedBy", "description": "Who or what executed the action, e.g. JobAgent or a user name." },
-        { "name": "ExecutedDate", "description": "UTC timestamp when the action was executed or recorded." }
+        { "name": "ExecutedDate", "description": "UTC timestamp when the action was executed or recorded." },
+        { "name": "JobLastExecutionTimeUtc", "description": "Exact JobStatus.LastExecutionTimeUtc value of the run this action was taken for. Always set this when creating a record - it is how you determine whether a specific failed run has already been handled." }
       ],
       "permissions": [
         {
@@ -95,7 +96,8 @@
         { "name": "JobId", "primary-key": true, "description": "Unique identifier of the SQL Agent job (msdb.dbo.sysjobs.job_id)." },
         { "name": "JobName", "description": "Display name of the SQL Agent job." },
         { "name": "CurrentStatus", "description": "Outcome of the job's most recent run: Failed, Succeeded, Retry, Cancelled, Running, or Unknown." },
-        { "name": "LastExecutionTime", "description": "Date and time the job last ran." },
+        { "name": "LastExecutionTime", "description": "Date and time the job last ran, in the SQL Server's LOCAL time zone (not UTC)." },
+        { "name": "LastExecutionTimeUtc", "description": "Date and time the job last ran, converted to UTC. Use this (not LastExecutionTime) when comparing against ActionHistory.ExecutedDate, which is also UTC." },
         { "name": "DurationSeconds", "description": "How long the last run took, in seconds." },
         { "name": "ErrorMessage", "description": "Message reported by the last job step, including failure details when the run failed." },
         { "name": "IsFailed", "description": "1 if the job's last run failed, otherwise 0." },

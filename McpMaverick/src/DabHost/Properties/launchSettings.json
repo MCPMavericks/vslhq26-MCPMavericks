@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "JobGuardianAI.DabHost": {
+      "commandName": "Project"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

@@ -3,6 +3,7 @@
     <File Path="../DatabaseScripts/JobExecutionStatus.sql" />
     <File Path="JobsScript.sql" />
   </Folder>
+  <Project Path="DabHost/JobGuardianAI.DabHost.csproj" />
   <Project Path="JobGuardianAI.Agents/JobGuardianAI.Agents.csproj" />
   <Project Path="UI/JobGuardianAI.csproj" />
 </Solution>

@@ -1,7 +1,9 @@
 using System.ComponentModel;
+using MailKit.Net.Smtp;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace JobGuardianAI.Agents.Services;
 
@@ -48,14 +50,39 @@ public class JobActionTools
         }
     }
 
-    [Description("Notifies the DBA/support team about a job failure that needs human attention. NOTE: no SMTP server is configured yet, so this currently simulates the send by logging it rather than delivering a real email.")]
-    public string SendEmail(
+    [Description("Sends an email to the DBA/support team about a job failure that needs human attention.")]
+    public async Task<string> SendEmail(
         [Description("Recipient email address. If omitted, defaults to the DBA team distribution list.")] string? to,
         [Description("Email subject line.")] string subject,
         [Description("Email body: describe the failed job, root cause, and recommended action.")] string body)
     {
         var recipient = string.IsNullOrWhiteSpace(to) ? _dbaTeamEmail : to;
-        _logger.LogWarning("SIMULATED EMAIL to {recipient} - Subject: {subject}\n{body}", recipient, subject, body);
-        return $"Email notification simulated and logged for '{recipient}' (no SMTP server is configured).";
+
+        var host = _configuration["Smtp:Host"] ?? "localhost";
+        var port = _configuration.GetValue<int?>("Smtp:Port") ?? 2525;
+        var fromAddress = _configuration["Smtp:FromAddress"] ?? "jobguardian@local.test";
+        var fromName = _configuration["Smtp:FromName"] ?? "JobGuardianAI";
+
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(fromName, fromAddress));
+        message.To.Add(MailboxAddress.Parse(recipient));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = body };
+
+        try
+        {
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, MailKit.Security.SecureSocketOptions.None);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(quit: true);
+
+            _logger.LogInformation("Sent email to {recipient} - Subject: {subject}", recipient, subject);
+            return $"Email sent successfully to '{recipient}'.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {recipient} via {host}:{port}.", recipient, host, port);
+            return $"Failed to send email to '{recipient}': {ex.Message}";
+        }
     }
 }
