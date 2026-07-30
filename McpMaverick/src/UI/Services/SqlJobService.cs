@@ -29,6 +29,28 @@ public class SqlJobService(HttpClient httpClient)
             .ToList() ?? [];
     }
 
+    public async Task<SqlAgentJob?> GetJobStatusByIdAsync(Guid jobId)
+    {
+        var response = await httpClient.GetFromJsonAsync<DabResponse<DabJobStatus>>(
+            $"/api/JobStatus/JobId/{jobId}", JsonOptions);
+
+        var r = response?.Value.FirstOrDefault();
+        if (r is null) return null;
+
+        return new SqlAgentJob
+        {
+            JobId               = Guid.Parse(r.JobId),
+            JobName             = r.JobName,
+            IsEnabled           = r.IsEnabled == 1,
+            CurrentStatus       = r.CurrentStatus ?? "Unknown",
+            LastExecutionTime   = r.LastExecutionTime,
+            LastDurationSeconds = r.DurationSeconds,
+            FailureMessage      = r.ErrorMessage,
+            IsHealthy           = r.IsFailed == 0,
+            ServerName          = r.ServerName
+        };
+    }
+
     public async Task<List<ActionHistoryEntry>> GetActionHistoryAsync(string jobName, int maxRows = 50)
     {
         var encoded = Uri.EscapeDataString(jobName);

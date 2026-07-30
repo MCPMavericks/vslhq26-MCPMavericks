@@ -237,8 +237,8 @@ else
                                 <td class="text-center text-muted small">@job.FormattedDuration</td>
                                 <td class="text-muted small">@(job.JobOwner ?? "—")</td>
                                 <td class="text-end pe-3">
-                                    <a asp-page="/JobDetails" asp-route-jobName="@job.JobName"
-                                       class="btn btn-outline-primary btn-sm">Details</a>
+                                    <a asp-page="/JobDetails" asp-route-jobName="@job.JobName" asp-route-jobId="@job.JobId"
+                                      class="btn btn-outline-primary btn-sm">Details</a>
                                 </td>
                             </tr>
                         }

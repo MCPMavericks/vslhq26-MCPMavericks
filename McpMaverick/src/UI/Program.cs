@@ -14,14 +14,14 @@ builder.Services.AddHttpClient<SqlJobService>(client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddSingleton(sp =>
-{
-    var client = new AzureOpenAIClient(
-        new Uri("LLM URL from Open ai foundry"),
-        new AzureKeyCredential("Key"));
+//builder.Services.AddSingleton(sp =>
+//{
+//    var client = new AzureOpenAIClient(
+//        new Uri("LLM URL from Open ai foundry"),
+//        new AzureKeyCredential("Key"));
 
-    return client.GetChatClient("gpt-4o-mini");
-});
+//    return client.GetChatClient("gpt-4o-mini");
+//});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
